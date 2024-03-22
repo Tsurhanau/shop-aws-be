@@ -6,7 +6,7 @@ import getProductsList from '@functions/getProductsList';
 const serverlessConfiguration: AWS = {
   service: 'product-service',
   frameworkVersion: '3',
-  plugins: ['serverless-esbuild'],
+  plugins: ['serverless-esbuild', 'serverless-auto-swagger'],
   provider: {
     name: 'aws',
     runtime: 'nodejs20.x',
@@ -32,6 +32,10 @@ const serverlessConfiguration: AWS = {
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
+    },
+    autoswagger: {
+      apiType: "http",
+      basePath: "/dev",
     },
   },
 };
