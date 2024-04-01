@@ -1,5 +1,6 @@
-import { DynamoDBDocumentClient, GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient } from "@libs/db/dynamoDBClient";
+import { v4 as uuid } from "uuid";
 
 class ProductService {
     
@@ -23,6 +24,24 @@ class ProductService {
     const result = await this.docClient.send(command);
     return result.Item;
   };
+
+  async createProduct(product) {
+    const saveProduct = {
+      id: uuid(),
+      title: product.title,
+      description: product.description,
+      price: product.price
+    };
+
+    const params = {
+      TableName: process.env.PRODUCTS_TABLE_NAME,
+      Item: saveProduct,
+    };
+    
+    await this.docClient.send(new PutCommand(params));
+    
+    return saveProduct;
+  }
 
 }
 
