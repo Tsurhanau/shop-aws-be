@@ -7,7 +7,11 @@ import createProduct from '@functions/createProduct';
 const serverlessConfiguration: AWS = {
   service: 'product-service',
   frameworkVersion: '3',
-  plugins: ['serverless-esbuild', 'serverless-auto-swagger'],
+  plugins: [
+    'serverless-esbuild', 
+    'serverless-auto-swagger', 
+    'serverless-dotenv-plugin'
+  ],
   provider: {
     name: 'aws',
     runtime: 'nodejs20.x',
@@ -17,10 +21,10 @@ const serverlessConfiguration: AWS = {
       shouldStartNameWithService: true,
     },
     environment: {
-      AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
-      NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-      PRODUCTS_TABLE_NAME: 'Product',
-      STOCKS_TABLE_NAME: 'Stock'
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: process.env.AWS_NODEJS_CONNECTION_REUSE_ENABLED,
+      NODE_OPTIONS: process.env.NODE_OPTIONS,
+      PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME,
+      STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME
     },
     iamRoleStatements: [{
       Effect: 'Allow',
