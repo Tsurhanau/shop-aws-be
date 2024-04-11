@@ -5,7 +5,7 @@ import { middyfy } from '@libs/lambda';
 import schema from './schema';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { Product } from '@libs/models/product';
-import productService from '@libs/services/product-service';
+import { productService } from '@libs/services/product-service';
 
 const getProductsById: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event: Pick<APIGatewayProxyEvent, 'pathParameters'>) => {
   const id = event.pathParameters?.productId;
@@ -15,7 +15,7 @@ const getProductsById: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async
   }
 
   try {
-    const product: Product = await productService.getProductById(id);
+    const product: Product = await productService.getProductById(id) as Product;
 
     if (!product) {
       return formatJSONResponse({ error: "Product not found" });
