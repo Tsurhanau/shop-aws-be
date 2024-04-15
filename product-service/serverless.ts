@@ -3,6 +3,7 @@ import type { AWS } from '@serverless/typescript';
 import getProductsById from '@functions/getProductsById';
 import getProductsList from '@functions/getProductsList';
 import createProduct from '@functions/createProduct';
+import catalogBatchProcess from '@functions/catalogBatchProcess';
 
 const serverlessConfiguration: AWS = {
   service: 'product-service',
@@ -24,7 +25,10 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: process.env.AWS_NODEJS_CONNECTION_REUSE_ENABLED,
       NODE_OPTIONS: process.env.NODE_OPTIONS,
       PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME,
-      STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME
+      STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME,
+      CREATE_PRODUCT_TOPIC_ARN: {
+        Ref: 'createProductTopic'
+      },
     },
     iamRoleStatements: [{
       Effect: 'Allow',
@@ -41,9 +45,17 @@ const serverlessConfiguration: AWS = {
         'arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/Product',
         'arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/Stock'
       ]
-    }],
+      },
+      {
+        Effect: 'Allow',
+        Action: 'sns:Publish',
+        Resource: {
+          Ref: 'createProductTopic',
+        },
+      },
+    ],
   },
-  functions: { getProductsById, getProductsList, createProduct },
+  functions: { getProductsById, getProductsList, createProduct, catalogBatchProcess },
   package: { individually: true },
   custom: {
     esbuild: {
@@ -59,6 +71,26 @@ const serverlessConfiguration: AWS = {
     autoswagger: {
       apiType: "http",
       basePath: "/dev",
+    },
+  },
+  resources: {
+    Resources: {
+      createProductTopic: {
+        Type: 'AWS::SNS::Topic',
+        Properties: {
+          TopicName: 'createProductTopic', 
+        },
+      },
+      emailSubscription: {
+        Type: 'AWS::SNS::Subscription',
+        Properties: {
+          Endpoint: 'curganovevgenij@gmail.com',
+          Protocol: 'email',
+          TopicArn: {
+            Ref: 'createProductTopic',
+          },
+        },
+      },
     },
   },
 };
