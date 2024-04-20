@@ -1,12 +1,15 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3Client } from "@libs/s3/s3Client";
+import { REGION, s3Client } from "@libs/s3/s3Client";
 import { S3EventRecord } from "aws-lambda";
-import { PassThrough } from 'stream';
+import { PassThrough, Readable } from 'stream';
 
 
 export const BUCKET_NAME = "s3-integrtion-bucket";
 const CATALOG_PATH = "upload/";
+
+let sqs = new SQSClient({ region: REGION });
 
 class ImportService {
 
@@ -41,7 +44,15 @@ class ImportService {
 
         const pass = new PassThrough();
     
-        const csvStream = response.Body.pipe(this.csvParser());
+        const csvStream = response.Body.pipe(this.csvParser({
+          mapHeaders: ({ index }) => ['title', 'description', 'price'][index],
+        }));
+        
+        for await (const data of Readable.from(csvStream)) {
+          console.log(`Processing data: ${JSON.stringify(data)}`);
+          await this.sendToSQS(data);
+          pass.write(JSON.stringify(data) + '\n');
+        }
     
         csvStream.on("data", (data) => {
             try {
@@ -67,6 +78,15 @@ class ImportService {
       catch (err) {
           console.error(`Error occurred when processing file: ${err}`);
       }
+    }
+
+    private async sendToSQS(data: any) {
+      const sqsParams = {
+        QueueUrl: process.env.CATALOG_ITEMS_QUEUE_URL,
+        MessageBody: JSON.stringify(data),
+      };
+  
+      await sqs.send(new SendMessageCommand(sqsParams));
     }
 }
   

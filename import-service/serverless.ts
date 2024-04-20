@@ -18,12 +18,25 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
+      CATALOG_ITEMS_QUEUE_URL: { Ref: 'catalogItemsQueue' },
     },
     iamRoleStatements: [
       {
         Effect: "Allow",
         Action: ["s3:PutObject", "s3:GetObject"],
         Resource: "arn:aws:s3:::s3-integrtion-bucket/upload/*"
+      },
+      {
+        Effect: 'Allow',
+        Action: [
+          'sqs:SendMessage',
+        ],
+        Resource: {
+          'Fn::GetAtt': [
+            'catalogItemsQueue',
+            'Arn',
+          ],
+        },
       },
     ],
   },
@@ -40,6 +53,16 @@ const serverlessConfiguration: AWS = {
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
+    },
+  },
+  resources: {
+    Resources: {
+      catalogItemsQueue: {
+        Type: 'AWS::SQS::Queue',
+        Properties: {
+          QueueName: 'catalogItemsQueue',
+        },
+      },
     },
   },
 };
